@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Typewords WPM</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+  :root{
+    --bg-1: #0f172a;
+    --accent: #7c3aed;
+    --muted: #94a3b8;
+    --good: #10b981;
+    --bad: #ef4444;
+    --card-bg: #0b1220;
+    --glass: rgba(255,255,255,0.04);
+  }
+  html,body{height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;}
+  body{
+    margin:0;
+    background: linear-gradient(180deg, #0b1220 0%, #071226 45%, #061026 100%);
+    color: #e6eef8;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  .app { max-width: 1100px; margin: 40px auto; padding: 28px; }
+  .card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border: 1px solid rgba(255,255,255,0.04); border-radius: 14px; padding: 22px; box-shadow: 0 8px 30px rgba(2,6,23,0.6); }
+  .title { font-weight: 800; font-size: 26px; letter-spacing: -0.02em; color: #f8fafc; }
+  .subtitle { color: var(--muted); font-size: 13px; }
+  #quoteBox {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius: 10px;
+    padding: 18px;
+    min-height: 140px;
+    max-height: 220px;
+    overflow-y: auto;
+    line-height: 1.6;
+    font-size: 20px;
+    color: #e6eef8;
+    border: 1px solid rgba(255,255,255,0.03);
+    transition: box-shadow .18s ease, transform .12s ease;
+    white-space: normal; /* allow wrapping at spaces */
+    word-break: normal;
+  }
+  #quoteBox:focus { outline: none; box-shadow: 0 6px 30px rgba(124,58,237,0.12); transform: translateY(-2px); }
+  .char {
+    display: inline; /* inline to avoid strange block wrapping */
+    padding: 0 0.2px;
+    margin: 0;
+    transition: background-color .08s linear, color .08s linear, transform .08s ease;
+  }
+  .word { display: inline-block; white-space: nowrap; } /* prevents mid-word breaks */
+  .char.correct { color: #3b82f6; font-weight: 700; }   /* bright blue */
+  .char.incorrect { color: #ef4444; font-weight: 700; background: rgba(239,68,68,0.06); border-radius: 3px; padding: 0 2px; }
+  .char.next { border-left: 1px solid rgba(255,255,255,0.06); animation: caret 1s step-end infinite; }
+  @keyframes caret { 50% { border-color: rgba(255,255,255,0.0); } }
+  .controls { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .select, .btn { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); padding: 8px 12px; border-radius: 8px; color: #eef2ff; font-weight:600; cursor:pointer; }
+  .btn.primary { background: linear-gradient(90deg,#7c3aed,#06b6d4); color:#fff; box-shadow: 0 6px 18px rgba(124,58,237,0.14); }
+  .btn.ghost { background: transparent; border: 1px solid rgba(255,255,255,0.06); }
+  .btn:disabled { opacity:0.4; cursor:not-allowed; }
+  #inputArea { background: transparent; border: none; color: transparent; caret-color: #fff; outline: none; width: 100%; height: 1px; resize: none; position: absolute; left: -9999px; }
+  .stats { display:flex; gap:18px; align-items:center; }
+  .stat { font-size: 14px; color:#cfe8ff; }
+  .stat .value { font-weight:700; display:block; font-size: 16px; }
+  .progressWrap { height:10px; background: rgba(255,255,255,0.03); border-radius:6px; overflow:hidden; margin-top:10px; }
+  .progressBar { height:100%; background: linear-gradient(90deg,#06b6d4,#7c3aed); width:0%; transition: width .18s linear; }
+  .result { margin-top: 18px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.03); }
+  .muted { color: var(--muted); font-size:13px; }
+  .flex-row { display:flex; align-items:center; gap:12px; }
+  .grow { flex:1; }
+  @media (max-width:768px){ .app { padding: 16px; margin: 18px auto; } .title { font-size:20px; } #quoteBox { font-size:18px; min-height:120px; } }
+</style>
+
+</head>
+<body>
+  <div class="app">
+    <div class="card">
+
+      <!-- header -->
+      <div class="flex-row" style="justify-content:space-between;margin-bottom:16px">
+        <div>
+          <div class="title">TypeWords — Typing Test</div>
+
+          <div class="muted" style="margin-top:6px">Fresh English sentences every run • Smooth per-character highlights • No server required</div>
+        </div>
+
+        <div class="controls" style="align-items:flex-end">
+          <div style="display:flex; gap:8px; align-items:center;">
+            <label class="muted" style="font-size:13px;">Words</label>
+            <select id="wordCount" class="select">
+              <option value="30">30</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+
+          <div style="display:flex; gap:8px; align-items:center;">
+            <label class="muted" style="font-size:13px;">Mode</label>
+            <select id="difficulty" class="select">
+              <option value="easy">Easy</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+
+          <button id="startBtn" class="btn primary">Start</button>
+          <button id="skipBtn" class="btn ghost">Skip</button>
+          <button id="restartBtn" class="btn ghost">Restart</button>
+        </div>
+      </div>
+
+      <!-- quote area -->
+      <div id="quoteBox" tabindex="0" aria-label="Typing text area">
+        <div class="muted" style="opacity:0.6">Click Start to fetch sentences and begin.</div>
+      </div>
+
+      <!-- hidden input to capture keystrokes -->
+      <textarea id="inputArea" aria-hidden="false" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+
+      <!-- progress + stats -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; gap:16px;">
+        <div class="stats">
+          <div class="stat"><span class="value" id="time">0</span><span class="muted">Time (s)</span></div>
+          <div class="stat"><span class="value" id="wpm">0</span><span class="muted">WPM</span></div>
+          <div class="stat"><span class="value" id="accuracy">100</span><span class="muted">Accuracy</span></div>
+          <div class="stat"><span class="value" id="progressPct">0%</span><span class="muted">Progress</span></div>
+        </div>
+
+        <div style="min-width:260px; flex-shrink:0;">
+          <div class="progressWrap" aria-hidden="true">
+            <div class="progressBar" id="progressBar" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- result placeholder -->
+      <div id="resultArea" class="result" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+/* TypeWords — simplified robust script (works offline, no external fetch required) */
+
+// DOM refs
+const quoteBox = document.getElementById('quoteBox');
+const inputArea = document.getElementById('inputArea');
+const startBtn = document.getElementById('startBtn');
+const skipBtn = document.getElementById('skipBtn');
+const restartBtn = document.getElementById('restartBtn');
+const wordCountSel = document.getElementById('wordCount');
+const difficultySel = document.getElementById('difficulty');
+const timeEl = document.getElementById('time');
+const wpmEl = document.getElementById('wpm');
+const accEl = document.getElementById('accuracy');
+const progressBar = document.getElementById('progressBar');
+const progressPct = document.getElementById('progressPct');
+const resultArea = document.getElementById('resultArea');
+
+// State
+let targetText = '';
+let charSpans = [];
+let started = false;
+let startTime = null;
+let timerInterval = null;
+let typedValue = '';
+let totalChars = 0;
+let correctChars = 0;
+let errors = 0;
+let finished = false;
+
+// Local word list (common words) — used for easy mode and to seed hard mode
+const COMMON_WORDS = ("the be to of and a in that have I it for not on with he as you do at this but his by from they we say her she or an will my one all would there their what so up out if about who get which go me").split(" ");
+
+// Helper: random pick
+function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function randomInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+// Build target text based on requested word count and difficulty
+// Big safe English word list (you can expand it as much as you want)
+const SAFE_WORDS = [
+  "time","person","year","way","day","thing","man","world","life","hand","part","child","eye","woman","place","work","week","case","point","government","company","number","group","problem","fact","night","home","water","room","mother","area","money","story","issue","side","school","state","family","student","hour","game","business","study","lot","book","word","science","system","question","house","service","friend","power","country","team","music","food","air","teacher","health","road","map","car","dog","city","community","result","change","morning","research","language","moment","truth","river","tree","mountain","ocean","future","energy","design","technology","machine","computer","light","sound","childhood","freedom","dream","idea","reason","love","peace","strength","value","purpose","education","practice","success","nature","earth","universe","hope","skill","art","culture","history","law","journey","leader","season","weather","holiday","winter","summer","spring","autumn","village","town","country","region","industry","school","college","university","knowledge","wisdom","information","concept","goal","project","plan","method","activity","movement","growth","balance","happiness","safety","trust","respect","support","care","action","choice","decision","effort","habit","belief","memory","mind","body","spirit","voice","character","future","story","adventure"
+];
+
+// Generate sentences
+function buildTargetText(requestedCount, difficulty){
+  const words = [];
+  const sentences = [];
+
+  while (words.length < requestedCount) {
+    // sentence length between 8 and 14 words
+    const sentenceLen = Math.min(requestedCount - words.length, Math.floor(Math.random() * 7) + 8);
+    let sentenceWords = [];
+
+    for (let i = 0; i < sentenceLen; i++) {
+      let w = SAFE_WORDS[Math.floor(Math.random() * SAFE_WORDS.length)];
+
+      if (difficulty === "easy") {
+        w = w.toLowerCase(); // simple lowercase
+      } else {
+        // HARD mode tweaks
+        if (Math.random() < 0.3) w = w.charAt(0).toUpperCase() + w.slice(1); // capital
+        if (Math.random() < 0.1) w = w.toUpperCase(); // all caps
+        if (Math.random() < 0.15) w += Math.floor(Math.random()*100); // add number
+        if (Math.random() < 0.15) {
+          const symbols = ["!", "?", ",", ".", ":", ";"];
+          const sym = symbols[Math.floor(Math.random() * symbols.length)];
+          w = Math.random() < 0.5 ? sym + w : w + sym;
+        }
+      }
+
+      sentenceWords.push(w);
+    }
+
+    let sentence = sentenceWords.join(" ");
+    if (difficulty === "easy") {
+      sentence = sentence.toLowerCase() + ".";
+    } else {
+      const endMarks = [".", "?", "!"];
+      sentence += endMarks[Math.floor(Math.random() * endMarks.length)];
+    }
+
+    sentences.push(sentence);
+    words.push(...sentenceWords);
+  }
+
+  return sentences.join(" ");
+}
+
+
+// Render target text with per-character spans, grouping words to avoid mid-word breaks
+function renderTarget(text){
+  targetText = text;
+  quoteBox.innerHTML = '';
+  charSpans = [];
+  const words = text.split(' ');
+  words.forEach((word, wi)=>{
+    const wordSpan = document.createElement('span');
+    wordSpan.className = 'word';
+    for (let i=0;i<word.length;i++){
+      const ch = word[i];
+      const span = document.createElement('span');
+      span.className = 'char';
+      span.textContent = ch;
+      span.dataset.char = ch;
+      span.dataset.index = charSpans.length;
+      wordSpan.appendChild(span);
+      charSpans.push(span);
+    }
+    quoteBox.appendChild(wordSpan);
+    if (wi !== words.length-1){
+      const sp = document.createElement('span');
+      sp.className = 'char';
+      sp.textContent = ' ';
+      sp.dataset.char = ' ';
+      sp.dataset.index = charSpans.length;
+      quoteBox.appendChild(sp);
+      charSpans.push(sp);
+    }
+  });
+  totalChars = charSpans.length;
+  placeCursor(0);
+  quoteBox.scrollTop = 0;
+}
+
+// Place caret marker
+function placeCursor(nextIndex){
+  charSpans.forEach(s => s.classList.remove('next'));
+  if (nextIndex < charSpans.length) charSpans[nextIndex].classList.add('next');
+  // ensure visible
+  const sp = charSpans[nextIndex];
+  if (sp){
+    const boxRect = quoteBox.getBoundingClientRect();
+    const spRect = sp.getBoundingClientRect();
+    if (spRect.bottom > boxRect.bottom - 24) {
+      quoteBox.scrollTop += (spRect.bottom - boxRect.bottom) + 24;
+    } else if (spRect.top < boxRect.top + 24) {
+      quoteBox.scrollTop -= (boxRect.top + 24 - spRect.top);
+    }
+  }
+}
+
+// Update highlights based on typedValue
+function updateHighlights(){
+  const typed = typedValue || '';
+  let correct = 0;
+  let errCount = 0;
+  for (let i=0;i<charSpans.length;i++){
+    const span = charSpans[i];
+    const expected = span.dataset.char || '';
+    const typedChar = typed[i];
+    span.classList.remove('correct','incorrect');
+    if (typeof typedChar !== 'undefined') {
+      if (typedChar === expected) {
+        span.classList.add('correct');
+        correct++;
+      } else {
+        span.classList.add('incorrect');
+        errCount++;
+      }
+    }
+  }
+  correctChars = correct;
+  errors = errCount;
+  placeCursor(typed.length);
+  updateStatsDisplay();
+  const pct = Math.round((typed.length / totalChars) * 100) || 0;
+  progressBar.style.width = pct + '%';
+  progressPct.textContent = pct + '%';
+}
+
+// Timer & stats
+function startTimer(){
+  if (started) return;
+  started = true;
+  finished = false;
+  startTime = Date.now();
+  timerInterval = setInterval(()=>updateStatsDisplay(), 250);
+}
+function stopTimer(){ started=false; clearInterval(timerInterval); timerInterval=null; }
+function updateStatsDisplay(){
+  if (!startTime) {
+    timeEl.textContent = '0'; wpmEl.textContent = '0'; accEl.textContent = '100'; return;
+  }
+  const elapsedMs = Date.now()-startTime;
+  const elapsedSec = Math.max(1, Math.floor(elapsedMs/1000));
+  timeEl.textContent = elapsedSec;
+  const wordsEquivalent = correctChars/5;
+  const minutes = elapsedMs/(60*1000);
+  const rawWpm = minutes>0 ? Math.round(wordsEquivalent / minutes) : 0;
+  wpmEl.textContent = rawWpm;
+  const typedLen = typedValue.length;
+  const accuracy = typedLen > 0 ? Math.round((correctChars/typedLen)*100) : 100;
+  accEl.textContent = accuracy;
+}
+
+// Check finish
+function checkFinish(){
+  if (typedValue.length === totalChars && totalChars>0) {
+    stopTimer();
+    finished = true;
+    showResults();
+  }
+}
+
+// Show results
+function showResults(){
+  const elapsedSec = Math.max(1, Math.floor((Date.now()-startTime)/1000));
+  const wordsEquivalent = correctChars/5;
+  const minutes = elapsedSec/60;
+  const wpmVal = Math.round(minutes>0 ? wordsEquivalent / minutes : 0);
+  const accuracyVal = typedValue.length>0 ? Math.round((correctChars/typedValue.length)*100) : 0;
+  const errorsVal = errors;
+  resultArea.style.display = 'block';
+  resultArea.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-weight:700; font-size:16px;">Session Results</div>
+        <div class="muted" style="font-size:13px; margin-top:6px;">Words: ${wordCountSel.value} • Mode: ${difficultySel.value.toUpperCase()}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:20px; font-weight:800; color: #e6fdf3;">${wpmVal} WPM</div>
+        <div class="muted" style="font-size:13px;">Elapsed: ${elapsedSec}s</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:16px; margin-top:12px; flex-wrap:wrap;">
+      <div style="flex:1; min-width:140px;">
+        <div class="muted">Accuracy</div>
+        <div style="font-weight:700; font-size:18px; color: ${accuracyVal >= 90 ? '#bff3d6' : (accuracyVal >= 75 ? '#ffe8a3' : '#ffcccc')};">${accuracyVal}%</div>
+      </div>
+      <div style="flex:1; min-width:140px;">
+        <div class="muted">Correct chars</div>
+        <div style="font-weight:700; font-size:18px;">${correctChars}</div>
+      </div>
+      <div style="flex:1; min-width:140px;">
+        <div class="muted">Errors</div>
+        <div style="font-weight:700; font-size:18px; color:#ffb3b3;">${errorsVal}</div>
+      </div>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:8px;">
+      <button id="downloadResult" class="btn primary" style="padding:8px 12px;">Download Result</button>
+      <button id="repeatBtn" class="btn ghost">Try Again</button>
+    </div>
+  `;
+  document.getElementById('downloadResult').addEventListener('click', ()=>{
+    const csv = `WPM,Accuracy,ElapsedSec,CorrectChars,Errors\n${wpmVal},${accuracyVal},${elapsedSec},${correctChars},${errorsVal}\n`;
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'typing_result.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  });
+  document.getElementById('repeatBtn').addEventListener('click', ()=> startNewTest(false));
+}
+
+// Start / Restart / Skip
+function startNewTest(showUI=true){
+  try{
+    stopTimer();
+    typedValue = ''; inputArea.value=''; resultArea.style.display='none';
+    started = false; finished=false; correctChars=0; errors=0;
+    progressBar.style.width='0%'; progressPct.textContent='0%';
+    timeEl.textContent='0'; wpmEl.textContent='0'; accEl.textContent='100';
+    startBtn.disabled = true; restartBtn.disabled = true; skipBtn.disabled = true; wordCountSel.disabled = true; difficultySel.disabled = true;
+    const requestedWords = parseInt(wordCountSel.value,10)||30;
+    const difficulty = difficultySel.value||'easy';
+    quoteBox.innerHTML = `<div class="muted">Generating text... <span style="opacity:0.85">•</span></div>`;
+    // Build text synchronously (no network)
+    const t = buildTargetText(requestedWords, difficulty);
+    renderTarget(t);
+    inputArea.value=''; typedValue=''; totalChars = t.length;
+    setTimeout(()=>{ inputArea.focus(); }, 60);
+    // re-enable
+    startBtn.disabled = false; restartBtn.disabled = false; skipBtn.disabled = false; wordCountSel.disabled = false; difficultySel.disabled = false;
+  } catch (err){
+    console.error('startNewTest error', err);
+    quoteBox.innerHTML = `<div class="muted">Error generating test: ${err && err.message ? err.message : err}. Check console.</div>`;
+    // ensure controls enabled so user can try again
+    startBtn.disabled = false; restartBtn.disabled = false; skipBtn.disabled = false; wordCountSel.disabled = false; difficultySel.disabled = false;
+  }
+}
+
+startBtn.addEventListener('click', ()=>{ startNewTest(true); inputArea.focus(); });
+restartBtn.addEventListener('click', ()=> startNewTest(true));
+skipBtn.addEventListener('click', ()=>{ typedValue=''; inputArea.value=''; startNewTest(true); });
+
+inputArea.addEventListener('paste', (e)=>{ e.preventDefault(); return false; });
+inputArea.addEventListener('contextmenu', (e)=> e.preventDefault());
+
+inputArea.addEventListener('input', ()=>{
+  typedValue = inputArea.value;
+  if (typedValue.length > totalChars) {
+    typedValue = typedValue.slice(0, totalChars); inputArea.value = typedValue;
+  }
+  if (!started) startTimer();
+  updateHighlights();
+  checkFinish();
+});
+
+quoteBox.addEventListener('click', ()=> inputArea.focus());
+quoteBox.addEventListener('selectstart', (e)=> e.preventDefault());
+
+document.addEventListener('keydown', (e)=>{ if (e.metaKey||e.ctrlKey||e.altKey) return; if (document.activeElement !== inputArea) inputArea.focus(); });
+document.addEventListener('keyup', (e)=>{ if (e.key === 'Enter' && document.activeElement !== inputArea && !startBtn.disabled) startBtn.click(); });
+window.addEventListener('resize', ()=> placeCursor(typedValue.length));
+
+// initial message
+quoteBox.innerHTML = `<div style="padding:10px" class="muted">Select words & mode → Click Start. When test starts, type directly — caret is shown in the text.</div>`;
+
+// expose for debugging
+window.TypeWords = { startNewTest, buildTargetText };
+
+</script>
+
+</body>
+</html>
